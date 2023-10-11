@@ -1,27 +1,24 @@
 import http from 'node:http'
+import { randomUUID } from 'node:crypto'
 import { json } from './middlewares/json.js'
+import { Database } from './database.js'
+import { routes } from './routes.js'
 
-const users = []
+const database = new Database()
+
+
 
 const server = http.createServer (async(request, response)=>{
     const {method, url} = request
 
     await json (request, response)
 
-    if (method === "GET" && url === "/users"){
-        return response
-        .end(JSON.stringify(users))
-    }
-    if (method === "POST" && url === "/users"){
-        const {name, email} = request.body
+    const route = routes.find (route =>{
+        return route.method === method && route.path === url
+    })
 
-        users.push({
-            id:1,
-            name,
-            email,
-        })
-
-        return response.writeHead(201).end()
+    if (route){
+        return route.handler(request, response)
     }
 
     return response.writeContinue(404).end()
